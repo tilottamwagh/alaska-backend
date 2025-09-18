@@ -35,7 +35,7 @@ app.post("/api/ultravox/chat", async (req, res) => {
         model: "gpt-4o-mini",
         voice: "alloy",
         initialMessages: [
-          { role: "CUSTOMER", text: userText }  // ✅ valid role guess
+          { role: "USER", text: userText } // ✅ now uppercase USER
         ],
       }),
     });
@@ -78,9 +78,9 @@ app.post("/api/ultravox/start-call", async (req, res) => {
           "You are Alaska Super Hospital Voice Assistant. Assist users with hospital queries over voice.",
         model: "gpt-4o-mini",
         voice: "alloy",
-        webRtc: {},  // ✅ correct format
+        medium: "webRtc", // ✅ correct way
         initialMessages: [
-          { role: "CUSTOMER", text: "Hello, I’d like to start a call." }
+          { role: "USER", text: "Hello, I’d like to start a call." }
         ],
       }),
     });
