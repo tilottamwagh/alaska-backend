@@ -15,48 +15,29 @@ console.log("🚀 Starting Alaska Backend...");
 console.log("✅ Agent ID:", ULTRAVOX_AGENT_ID || "❌ MISSING");
 console.log("✅ API Key present?", ULTRAVOX_API_KEY ? "✅ YES" : "❌ NO");
 
-// ================== Utility: Try both header styles ==================
-async function fetchWithAuth(url, options) {
-  // First try Bearer
-  let resp = await fetch(url, {
-    ...options,
-    headers: {
-      ...options.headers,
-      Authorization: `Bearer ${ULTRAVOX_API_KEY}`,
-    },
-  });
-
-  if (resp.status === 403) {
-    console.warn("⚠️ Bearer auth failed, retrying with Token");
-    // Retry with Token
-    resp = await fetch(url, {
-      ...options,
-      headers: {
-        ...options.headers,
-        Authorization: `Token ${ULTRAVOX_API_KEY}`,
-      },
-    });
-  }
-
-  return resp;
-}
-
 // ================== HEALTH CHECK ==================
 app.get("/", (req, res) => {
   console.log("✅ Health check hit from Railway");
   res.send("✅ Alaska Backend is running");
 });
 
-// ================== CHAT ENDPOINT ==================
+// ================== CHAT ENDPOINT (public API) ==================
 app.post("/api/ultravox/chat", async (req, res) => {
   try {
     const userText = req.body.text || "";
-    const url = `https://app.ultravox.ai/api/internal/agents/${ULTRAVOX_AGENT_ID}/test_calls`;
 
-    const resp = await fetchWithAuth(url, {
+    const url = `https://api.ultravox.ai/api/calls`;
+
+    const resp = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: userText }),
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-Key": ULTRAVOX_API_KEY,
+      },
+      body: JSON.stringify({
+        agentId: ULTRAVOX_AGENT_ID,
+        input: { text: userText },
+      }),
     });
 
     if (!resp.ok) {
@@ -83,15 +64,21 @@ app.post("/api/ultravox/chat", async (req, res) => {
   }
 });
 
-// ================== START CALL ENDPOINT ==================
+// ================== START CALL ENDPOINT (public API placeholder) ==================
 app.post("/api/ultravox/start-call", async (req, res) => {
   try {
-    const url = `https://app.ultravox.ai/api/internal/blocky/start-call`;
+    const url = `https://api.ultravox.ai/api/calls`;
 
-    const resp = await fetchWithAuth(url, {
+    const resp = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ agentId: ULTRAVOX_AGENT_ID }),
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-Key": ULTRAVOX_API_KEY,
+      },
+      body: JSON.stringify({
+        agentId: ULTRAVOX_AGENT_ID,
+        input: { text: "Start a call session" },
+      }),
     });
 
     if (!resp.ok) {
@@ -106,10 +93,9 @@ app.post("/api/ultravox/start-call", async (req, res) => {
     console.log("✅ Ultravox start-call response:", JSON.stringify(data, null, 2));
 
     res.json({
-      callId: data.callId || null,
-      livekitUrl: data.livekit?.url || null,
-      token: data.livekit?.token || null,
+      callId: data.id || null,
       status: data.status || "started",
+      details: data,
     });
   } catch (err) {
     console.error("❌ Start call error:", err);
