@@ -7,12 +7,10 @@ app.use(cors());
 app.use(express.json());
 
 // ✅ Environment variables
-const ULTRAVOX_AGENT_ID = process.env.ULTRAVOX_AGENT_ID;
 const ULTRAVOX_API_KEY = process.env.ULTRAVOX_API_KEY;
 
 // ✅ Debug logs
 console.log("🚀 Starting Alaska Backend...");
-console.log("✅ Agent ID:", ULTRAVOX_AGENT_ID || "❌ MISSING");
 console.log("✅ API Key present?", ULTRAVOX_API_KEY ? "✅ YES" : "❌ NO");
 
 // ================== HEALTH CHECK ==================
@@ -21,22 +19,24 @@ app.get("/", (req, res) => {
   res.send("✅ Alaska Backend is running");
 });
 
-// ================== CHAT ENDPOINT (public API) ==================
+// ================== CHAT ENDPOINT ==================
 app.post("/api/ultravox/chat", async (req, res) => {
   try {
     const userText = req.body.text || "";
 
-    const url = `https://api.ultravox.ai/api/calls`;
-
-    const resp = await fetch(url, {
+    const resp = await fetch("https://api.ultravox.ai/api/calls", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "X-API-Key": ULTRAVOX_API_KEY,
       },
       body: JSON.stringify({
-        agentId: ULTRAVOX_AGENT_ID,
-        input: { text: userText },
+        systemPrompt:
+          "You are Alaska Super Hospital Assistant. Answer questions about doctors, appointments, and hospital services.",
+        temperature: 0.7,
+        model: "gpt-4o-mini", // ✅ adjust if Ultravox docs list other models
+        voice: "alloy",
+        initialMessages: [{ role: "user", content: userText }],
       }),
     });
 
@@ -51,10 +51,11 @@ app.post("/api/ultravox/chat", async (req, res) => {
     const data = await resp.json();
     console.log("✅ Ultravox chat response:", JSON.stringify(data, null, 2));
 
+    // Try to extract last message if present
     let agentReply = "No reply found.";
     if (data.messages && Array.isArray(data.messages)) {
       const lastMsg = data.messages[data.messages.length - 1];
-      if (lastMsg?.text) agentReply = lastMsg.text;
+      if (lastMsg?.content) agentReply = lastMsg.content;
     }
 
     res.json({ reply: agentReply });
@@ -64,20 +65,22 @@ app.post("/api/ultravox/chat", async (req, res) => {
   }
 });
 
-// ================== START CALL ENDPOINT (public API placeholder) ==================
+// ================== START CALL ENDPOINT ==================
 app.post("/api/ultravox/start-call", async (req, res) => {
   try {
-    const url = `https://api.ultravox.ai/api/calls`;
-
-    const resp = await fetch(url, {
+    const resp = await fetch("https://api.ultravox.ai/api/calls", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "X-API-Key": ULTRAVOX_API_KEY,
       },
       body: JSON.stringify({
-        agentId: ULTRAVOX_AGENT_ID,
-        input: { text: "Start a call session" },
+        systemPrompt:
+          "You are Alaska Super Hospital Voice Assistant. Assist users with hospital queries over voice.",
+        model: "gpt-4o-mini",
+        voice: "alloy",
+        initialMessages: [{ role: "user", content: "Start a call session" }],
+        medium: "voice", // ✅ important for call setup
       }),
     });
 
