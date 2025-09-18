@@ -14,32 +14,30 @@ app.post("/api/ultravox/chat", async (req, res) => {
   try {
     const userText = req.body.text || "";
 
-    const resp = await fetch(`https://api.ultravox.ai/api/calls`, {
+    const url = `https://app.ultravox.ai/api/internal/agents/${ULTRAVOX_AGENT_ID}/test_calls`;
+
+    const resp = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "X-API-Key": ULTRAVOX_API_KEY,
       },
-      body: JSON.stringify({
-        agentId: ULTRAVOX_AGENT_ID,
-        initialMessages: [
-          {
-            role: "MESSAGE_ROLE_USER",
-            text: userText,
-          },
-        ],
-        systemPrompt: "You are Alaska, a helpful hospital voice assistant.",
-      }),
+      body: JSON.stringify({ text: userText }),
     });
 
-    const data = await resp.json();
-    let agentReply = "No reply found.";
+    if (!resp.ok) {
+      const errText = await resp.text();
+      console.error("Ultravox chat API error:", resp.status, errText);
+      return res.status(500).json({ reply: "⚠️ Error from Ultravox API" });
+    }
 
-    // If messages exist, pick last one
-    if (data.call && data.call.messages && data.call.messages.length > 0) {
-      const msgs = data.call.messages;
-      const last = msgs[msgs.length - 1];
-      agentReply = last.text || agentReply;
+    const data = await resp.json();
+    console.log("Ultravox chat response:", JSON.stringify(data, null, 2));
+
+    let agentReply = "No reply found.";
+    if (data.messages && Array.isArray(data.messages)) {
+      const lastMsg = data.messages[data.messages.length - 1];
+      if (lastMsg?.text) agentReply = lastMsg.text;
     }
 
     res.json({ reply: agentReply });
@@ -52,23 +50,31 @@ app.post("/api/ultravox/chat", async (req, res) => {
 // ✅ Start Call endpoint
 app.post("/api/ultravox/start-call", async (req, res) => {
   try {
-    const resp = await fetch(`https://api.ultravox.ai/api/calls`, {
+    const url = `https://app.ultravox.ai/api/internal/blocky/start-call`;
+
+    const resp = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "X-API-Key": ULTRAVOX_API_KEY,
       },
-      body: JSON.stringify({
-        agentId: ULTRAVOX_AGENT_ID,
-        systemPrompt: "You are Alaska, a hospital assistant ready for voice calls.",
-      }),
+      body: JSON.stringify({ agentId: ULTRAVOX_AGENT_ID }),
     });
 
+    if (!resp.ok) {
+      const errText = await resp.text();
+      console.error("Ultravox start-call API error:", resp.status, errText);
+      return res.status(500).json({ message: "⚠️ Error starting Ultravox call." });
+    }
+
     const data = await resp.json();
+    console.log("Ultravox start-call response:", JSON.stringify(data, null, 2));
+
     res.json({
-      callId: data.call?.id || null,
-      status: data.call?.status || "started",
-      message: "Call started successfully",
+      callId: data.callId || null,
+      livekitUrl: data.livekit?.url || null,
+      token: data.livekit?.token || null,
+      status: data.status || "started",
     });
   } catch (err) {
     console.error("Start call error:", err);
@@ -76,7 +82,7 @@ app.post("/api/ultravox/start-call", async (req, res) => {
   }
 });
 
-// ✅ Webhook for Ultravox events
+// ✅ Webhook endpoint
 app.post("/webhook", (req, res) => {
   console.log("Webhook event received:", req.body);
   res.status(200).send("✅ Webhook received");
