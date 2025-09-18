@@ -21,6 +21,7 @@ app.post("/api/ultravox/chat", async (req, res) => {
       headers: {
         "Content-Type": "application/json",
         "X-API-Key": ULTRAVOX_API_KEY,
+        "Authorization": `Bearer ${ULTRAVOX_API_KEY}` // fallback
       },
       body: JSON.stringify({ text: userText }),
     });
@@ -57,6 +58,7 @@ app.post("/api/ultravox/start-call", async (req, res) => {
       headers: {
         "Content-Type": "application/json",
         "X-API-Key": ULTRAVOX_API_KEY,
+        "Authorization": `Bearer ${ULTRAVOX_API_KEY}` // fallback
       },
       body: JSON.stringify({ agentId: ULTRAVOX_AGENT_ID }),
     });
