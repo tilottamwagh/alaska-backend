@@ -54,12 +54,12 @@ To maintain user engagement, avoid prolonged silence while processing requests. 
 
 // ================== CONFIG FROM UI ==================
 const MODEL = "fixie-ai/ultravox";
-const VOICE = "verse"; // ✅ fixed voice
+const VOICE = "AverageJoe"; // ✅ your Ultravox voice
 const GREETING =
   "Hey I am Alaska from the Super Multifacility Hospital. Hope you are good today. How can I assist you?";
 const INACTIVITY_MSG =
   "Are you still there? Please let me know if you need any Assistance.";
-const FIRST_SPEAKER = "FIRST_SPEAKER_SYSTEM"; // ✅ fixed first speaker
+const FIRST_SPEAKER = "SYSTEM"; // ✅ fixed enum
 const INITIAL_OUTPUT_MEDIUM = "VOICE";
 const JOIN_TIMEOUT_SECONDS = 15;
 const MAX_DURATION_SECONDS = 600;
