@@ -17,6 +17,7 @@ console.log("✅ API Key present?", ULTRAVOX_API_KEY ? "✅ YES" : "❌ NO");
 
 // ================== HEALTH CHECK ==================
 app.get("/", (req, res) => {
+  console.log("✅ Health check hit from Railway");
   res.send("✅ Alaska Backend is running");
 });
 
@@ -31,7 +32,7 @@ app.post("/api/ultravox/chat", async (req, res) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-API-Key": ULTRAVOX_API_KEY, // ✅ required by Ultravox
+        "X-API-Key": ULTRAVOX_API_KEY,
       },
       body: JSON.stringify({ text: userText }),
     });
@@ -39,7 +40,7 @@ app.post("/api/ultravox/chat", async (req, res) => {
     if (!resp.ok) {
       const errText = await resp.text();
       console.error("❌ Ultravox chat API error:", resp.status, errText);
-      return res.status(500).json({ reply: "⚠️ Error from Ultravox API" });
+      return res.status(500).json({ reply: `⚠️ Error from Ultravox API: ${resp.status} ${errText}` });
     }
 
     const data = await resp.json();
@@ -67,7 +68,7 @@ app.post("/api/ultravox/start-call", async (req, res) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-API-Key": ULTRAVOX_API_KEY, // ✅ required by Ultravox
+        "X-API-Key": ULTRAVOX_API_KEY,
       },
       body: JSON.stringify({ agentId: ULTRAVOX_AGENT_ID }),
     });
@@ -75,7 +76,7 @@ app.post("/api/ultravox/start-call", async (req, res) => {
     if (!resp.ok) {
       const errText = await resp.text();
       console.error("❌ Ultravox start-call API error:", resp.status, errText);
-      return res.status(500).json({ message: "⚠️ Error starting Ultravox call." });
+      return res.status(500).json({ message: `⚠️ Error starting Ultravox call: ${resp.status} ${errText}` });
     }
 
     const data = await resp.json();
@@ -101,4 +102,6 @@ app.post("/webhook", (req, res) => {
 
 // ================== START SERVER ==================
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, "0.0.0.0", () => console.log(`🚀 Backend running on port ${PORT}`));
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 Backend running and listening on http://0.0.0.0:${PORT}`);
+});
