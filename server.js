@@ -15,6 +15,11 @@ console.log("🚀 Starting Alaska Backend...");
 console.log("✅ Agent ID:", ULTRAVOX_AGENT_ID || "❌ MISSING");
 console.log("✅ API Key present?", ULTRAVOX_API_KEY ? "✅ YES" : "❌ NO");
 
+// ================== HEALTH CHECK ==================
+app.get("/", (req, res) => {
+  res.send("✅ Alaska Backend is running");
+});
+
 // ================== CHAT ENDPOINT ==================
 app.post("/api/ultravox/chat", async (req, res) => {
   try {
@@ -95,6 +100,5 @@ app.post("/webhook", (req, res) => {
 });
 
 // ================== START SERVER ==================
-// 👇 Railway requires 0.0.0.0 + process.env.PORT
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, "0.0.0.0", () => console.log(`🚀 Backend running on port ${PORT}`));
