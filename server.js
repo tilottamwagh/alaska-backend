@@ -6,11 +6,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ✅ Read environment variables
+// ✅ Environment variables from Railway
 const ULTRAVOX_AGENT_ID = process.env.ULTRAVOX_AGENT_ID;
 const ULTRAVOX_API_KEY = process.env.ULTRAVOX_API_KEY;
 
-// ✅ Debug logging – check if Railway is injecting vars
+// ✅ Debug logs
 console.log("🚀 Starting Alaska Backend...");
 console.log("✅ Agent ID:", ULTRAVOX_AGENT_ID || "❌ MISSING");
 console.log("✅ API Key present?", ULTRAVOX_API_KEY ? "✅ YES" : "❌ NO");
@@ -26,7 +26,7 @@ app.post("/api/ultravox/chat", async (req, res) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-API-Key": ULTRAVOX_API_KEY, // ✅ Correct header
+        "X-API-Key": ULTRAVOX_API_KEY, // ✅ required by Ultravox
       },
       body: JSON.stringify({ text: userText }),
     });
@@ -62,7 +62,7 @@ app.post("/api/ultravox/start-call", async (req, res) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-API-Key": ULTRAVOX_API_KEY, // ✅ Correct header
+        "X-API-Key": ULTRAVOX_API_KEY, // ✅ required by Ultravox
       },
       body: JSON.stringify({ agentId: ULTRAVOX_AGENT_ID }),
     });
@@ -95,5 +95,6 @@ app.post("/webhook", (req, res) => {
 });
 
 // ================== START SERVER ==================
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Backend running on port ${PORT}`));
+// 👇 Railway requires 0.0.0.0 + process.env.PORT
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, "0.0.0.0", () => console.log(`🚀 Backend running on port ${PORT}`));
