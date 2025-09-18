@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ✅ Environment variables from Railway
+// ✅ Environment variables
 const ULTRAVOX_AGENT_ID = process.env.ULTRAVOX_AGENT_ID;
 const ULTRAVOX_API_KEY = process.env.ULTRAVOX_API_KEY;
 
@@ -14,6 +14,32 @@ const ULTRAVOX_API_KEY = process.env.ULTRAVOX_API_KEY;
 console.log("🚀 Starting Alaska Backend...");
 console.log("✅ Agent ID:", ULTRAVOX_AGENT_ID || "❌ MISSING");
 console.log("✅ API Key present?", ULTRAVOX_API_KEY ? "✅ YES" : "❌ NO");
+
+// ================== Utility: Try both header styles ==================
+async function fetchWithAuth(url, options) {
+  // First try Bearer
+  let resp = await fetch(url, {
+    ...options,
+    headers: {
+      ...options.headers,
+      Authorization: `Bearer ${ULTRAVOX_API_KEY}`,
+    },
+  });
+
+  if (resp.status === 403) {
+    console.warn("⚠️ Bearer auth failed, retrying with Token");
+    // Retry with Token
+    resp = await fetch(url, {
+      ...options,
+      headers: {
+        ...options.headers,
+        Authorization: `Token ${ULTRAVOX_API_KEY}`,
+      },
+    });
+  }
+
+  return resp;
+}
 
 // ================== HEALTH CHECK ==================
 app.get("/", (req, res) => {
@@ -25,22 +51,20 @@ app.get("/", (req, res) => {
 app.post("/api/ultravox/chat", async (req, res) => {
   try {
     const userText = req.body.text || "";
-
     const url = `https://app.ultravox.ai/api/internal/agents/${ULTRAVOX_AGENT_ID}/test_calls`;
 
-    const resp = await fetch(url, {
+    const resp = await fetchWithAuth(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-API-Key": ULTRAVOX_API_KEY,
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: userText }),
     });
 
     if (!resp.ok) {
       const errText = await resp.text();
       console.error("❌ Ultravox chat API error:", resp.status, errText);
-      return res.status(500).json({ reply: `⚠️ Error from Ultravox API: ${resp.status} ${errText}` });
+      return res
+        .status(500)
+        .json({ reply: `⚠️ Error from Ultravox API: ${resp.status} ${errText}` });
     }
 
     const data = await resp.json();
@@ -64,19 +88,18 @@ app.post("/api/ultravox/start-call", async (req, res) => {
   try {
     const url = `https://app.ultravox.ai/api/internal/blocky/start-call`;
 
-    const resp = await fetch(url, {
+    const resp = await fetchWithAuth(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-API-Key": ULTRAVOX_API_KEY,
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ agentId: ULTRAVOX_AGENT_ID }),
     });
 
     if (!resp.ok) {
       const errText = await resp.text();
       console.error("❌ Ultravox start-call API error:", resp.status, errText);
-      return res.status(500).json({ message: `⚠️ Error starting Ultravox call: ${resp.status} ${errText}` });
+      return res
+        .status(500)
+        .json({ message: `⚠️ Error starting Ultravox call: ${resp.status} ${errText}` });
     }
 
     const data = await resp.json();
@@ -102,6 +125,6 @@ app.post("/webhook", (req, res) => {
 
 // ================== START SERVER ==================
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 Backend running and listening on http://0.0.0.0:${PORT}`);
-});
+app.listen(PORT, "0.0.0.0", () =>
+  console.log(`🚀 Backend running and listening on http://0.0.0.0:${PORT}`)
+);
