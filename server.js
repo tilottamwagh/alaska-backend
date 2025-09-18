@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ✅ Environment variables
+// ✅ Environment variable
 const ULTRAVOX_API_KEY = process.env.ULTRAVOX_API_KEY;
 
 // ✅ Debug logs
@@ -34,9 +34,12 @@ app.post("/api/ultravox/chat", async (req, res) => {
         systemPrompt:
           "You are Alaska Super Hospital Assistant. Answer questions about doctors, appointments, and hospital services.",
         temperature: 0.7,
-        model: "gpt-4o-mini", // ✅ adjust if Ultravox docs list other models
+        model: "gpt-4o-mini", // adjust if Ultravox expects a different model name
         voice: "alloy",
-        initialMessages: [{ role: "user", content: userText }],
+        initialMessages: [
+          { role: "system", content: "Conversation started." },
+          { role: "assistant", content: userText }
+        ],
       }),
     });
 
@@ -51,7 +54,7 @@ app.post("/api/ultravox/chat", async (req, res) => {
     const data = await resp.json();
     console.log("✅ Ultravox chat response:", JSON.stringify(data, null, 2));
 
-    // Try to extract last message if present
+    // Try to extract a reply
     let agentReply = "No reply found.";
     if (data.messages && Array.isArray(data.messages)) {
       const lastMsg = data.messages[data.messages.length - 1];
@@ -79,8 +82,11 @@ app.post("/api/ultravox/start-call", async (req, res) => {
           "You are Alaska Super Hospital Voice Assistant. Assist users with hospital queries over voice.",
         model: "gpt-4o-mini",
         voice: "alloy",
-        initialMessages: [{ role: "user", content: "Start a call session" }],
-        medium: "voice", // ✅ important for call setup
+        medium: "voice", // ✅ important for audio calls
+        initialMessages: [
+          { role: "system", content: "Voice session started." },
+          { role: "assistant", content: "Hello, how can I help you today?" }
+        ],
       }),
     });
 
