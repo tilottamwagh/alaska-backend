@@ -35,7 +35,7 @@ app.post("/api/ultravox/chat", async (req, res) => {
         model: "gpt-4o-mini",
         voice: "alloy",
         initialMessages: [
-          { content: userText } // ✅ no role, just content
+          { role: "assistant", text: userText } // ✅ use 'text' instead of 'content'
         ],
       }),
     });
@@ -54,7 +54,7 @@ app.post("/api/ultravox/chat", async (req, res) => {
     let agentReply = "No reply found.";
     if (data.messages && Array.isArray(data.messages)) {
       const lastMsg = data.messages[data.messages.length - 1];
-      if (lastMsg?.content) agentReply = lastMsg.content;
+      if (lastMsg?.text) agentReply = lastMsg.text;
     }
 
     res.json({ reply: agentReply });
@@ -78,9 +78,9 @@ app.post("/api/ultravox/start-call", async (req, res) => {
           "You are Alaska Super Hospital Voice Assistant. Assist users with hospital queries over voice.",
         model: "gpt-4o-mini",
         voice: "alloy",
-        webRtc: {}, // ✅ correct field for voice
+        medium: "webRtc", // ✅ string instead of object
         initialMessages: [
-          { content: "Hello, how can I help you today?" }
+          { role: "assistant", text: "Hello, how can I help you today?" }
         ],
       }),
     });
