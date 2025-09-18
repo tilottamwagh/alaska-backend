@@ -6,14 +6,18 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Ultravox Agent + API Key (replace with yours if rotated)
-const ULTRAVOX_AGENT_ID = "d56b89c1-154e-4c47-bfc2-33c8a85698ff";
-const ULTRAVOX_API_KEY = "RWqVcNoE.bpzsvW5JkeUqF9ZwoTSQ3JWb9wUi1Y31";
+// Read from environment variables (Railway Settings → Variables)
+const ULTRAVOX_AGENT_ID = process.env.ULTRAVOX_AGENT_ID;
+const ULTRAVOX_API_KEY = process.env.ULTRAVOX_API_KEY;
 
 // Route for frontend messages → forwards to Ultravox
 app.post("/api/ultravox", async (req, res) => {
   try {
-    const userMessage = req.body.text;
+    const userMessage = req.body.text || "";
+
+    if (!ULTRAVOX_AGENT_ID || !ULTRAVOX_API_KEY) {
+      return res.status(500).json({ reply: "⚠️ Backend not configured with Agent ID or API Key" });
+    }
 
     const uvResponse = await fetch(
       `https://api.ultravox.ai/agents/${ULTRAVOX_AGENT_ID}/webhook`,
@@ -21,17 +25,31 @@ app.post("/api/ultravox", async (req, res) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${ULTRAVOX_API_KEY}`
+          "Authorization": `Bearer ${ULTRAVOX_API_KEY}`,
         },
         body: JSON.stringify({ text: userMessage }),
       }
     );
 
+    if (!uvResponse.ok) {
+      const errorText = await uvResponse.text();
+      console.error("Ultravox API error:", uvResponse.status, errorText);
+      return res.status(500).json({ reply: "⚠️ Error from Ultravox API" });
+    }
+
     const data = await uvResponse.json();
-    res.json(data);
+
+    // Pick the best reply field safely
+    const reply =
+      data.reply ||
+      data.response ||
+      data.text ||
+      JSON.stringify(data);
+
+    res.json({ reply });
   } catch (error) {
     console.error("Error talking to Ultravox:", error);
-    res.status(500).json({ error: "Something went wrong" });
+    res.status(500).json({ reply: "⚠️ Error contacting Ultravox agent." });
   }
 });
 
