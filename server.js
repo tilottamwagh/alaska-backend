@@ -54,12 +54,12 @@ To maintain user engagement, avoid prolonged silence while processing requests. 
 
 // ================== CONFIG FROM UI ==================
 const MODEL = "fixie-ai/ultravox";
-const VOICE = "alloy";
+const VOICE = "verse"; // ✅ fixed voice
 const GREETING =
   "Hey I am Alaska from the Super Multifacility Hospital. Hope you are good today. How can I assist you?";
 const INACTIVITY_MSG =
   "Are you still there? Please let me know if you need any Assistance.";
-const FIRST_SPEAKER = "AGENT";
+const FIRST_SPEAKER = "FIRST_SPEAKER_SYSTEM"; // ✅ fixed first speaker
 const INITIAL_OUTPUT_MEDIUM = "VOICE";
 const JOIN_TIMEOUT_SECONDS = 15;
 const MAX_DURATION_SECONDS = 600;
@@ -129,7 +129,7 @@ app.post("/api/ultravox/start-call", async (req, res) => {
       model: MODEL,
       voice: VOICE,
       medium: { webRtc: {} }, // ✅ corrected
-      firstSpeaker: FIRST_SPEAKER,
+      firstSpeaker: FIRST_SPEAKER, // ✅ corrected
       initialOutputMedium: INITIAL_OUTPUT_MEDIUM,
       recordingEnabled: false,
       joinTimeout: JOIN_TIMEOUT_SECONDS,
