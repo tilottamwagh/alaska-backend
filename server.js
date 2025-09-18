@@ -8,7 +8,7 @@ app.use(cors());
 app.use(express.json());
 
 const ULTRAVOX_API_KEY = process.env.ULTRAVOX_API_KEY; // set in Railway
-const SELECTED_TOOLS = ["f4322d60-5efc-4a16-b73a-143b296b6303"]; // your Alaska tool
+const SELECTED_TOOL_ID = "f4322d60-5efc-4a16-b73a-143b296b6303";
 
 // ================== SUPER PROMPT ==================
 const SYSTEM_PROMPT = `# Personality
@@ -104,7 +104,9 @@ app.post("/api/ultravox/chat", async (req, res) => {
       initialMessages: [
         { role: "MESSAGE_ROLE_UNSPECIFIED", text: userText }
       ],
-      selectedTools: SELECTED_TOOLS,
+      selectedTools: [
+        { toolId: SELECTED_TOOL_ID }
+      ],
     };
 
     const resp = await callUltravox(payload);
@@ -126,7 +128,7 @@ app.post("/api/ultravox/start-call", async (req, res) => {
       systemPrompt: SYSTEM_PROMPT,
       model: MODEL,
       voice: VOICE,
-      medium: "webRtc",
+      medium: { webRtc: {} }, // ✅ corrected
       firstSpeaker: FIRST_SPEAKER,
       initialOutputMedium: INITIAL_OUTPUT_MEDIUM,
       recordingEnabled: false,
@@ -142,7 +144,9 @@ app.post("/api/ultravox/start-call", async (req, res) => {
       inactivityMessages: [
         { duration: 30, text: INACTIVITY_MSG }
       ],
-      selectedTools: SELECTED_TOOLS,
+      selectedTools: [
+        { toolId: SELECTED_TOOL_ID }
+      ],
     };
 
     const resp = await callUltravox(payload);
