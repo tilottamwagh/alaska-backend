@@ -17,72 +17,75 @@ app.get("/", (req, res) => {
   res.send("✅ Alaska Backend is running");
 });
 
+// ================== HELPER: call Ultravox ==================
+async function callUltravox(payload) {
+  const resp = await fetch("https://api.ultravox.ai/api/calls", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-API-Key": ULTRAVOX_API_KEY,
+    },
+    body: JSON.stringify(payload),
+  });
+  return resp;
+}
+
 // ================== CHAT ENDPOINT ==================
 app.post("/api/ultravox/chat", async (req, res) => {
-  try {
-    const userText = req.body.text || "";
+  const userText = req.body.text || "";
 
-    const resp = await fetch("https://api.ultravox.ai/api/calls", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-API-Key": ULTRAVOX_API_KEY,
-      },
-      body: JSON.stringify({
-        systemPrompt:
-          "You are Alaska Super Hospital Assistant. Answer questions about doctors, appointments, and hospital services.",
-        temperature: 0.7,
-        model: "gpt-4o-mini",
-        voice: "alloy",
-        initialMessages: [
-          { role: "USER", text: userText } // ✅ now uppercase USER
-        ],
-      }),
-    });
+  const basePayload = {
+    systemPrompt:
+      "You are Alaska Super Hospital Assistant. Answer questions about doctors, appointments, and hospital services.",
+    temperature: 0.7,
+    model: "gpt-4o-mini",
+    voice: "alloy",
+  };
 
-    if (!resp.ok) {
-      const errText = await resp.text();
-      console.error("❌ Ultravox chat API error:", resp.status, errText);
-      return res
-        .status(500)
-        .json({ reply: `⚠️ Error from Ultravox API: ${resp.status} ${errText}` });
+  // Try role: CLIENT, fallback AGENT
+  const rolesToTry = ["CLIENT", "AGENT"];
+  for (const role of rolesToTry) {
+    try {
+      const resp = await callUltravox({
+        ...basePayload,
+        initialMessages: [{ role, text: userText }],
+      });
+
+      if (resp.ok) {
+        const data = await resp.json();
+        console.log(`✅ Chat success with role=${role}:`, JSON.stringify(data, null, 2));
+        let agentReply = "No reply found.";
+        if (data.messages && Array.isArray(data.messages)) {
+          const lastMsg = data.messages[data.messages.length - 1];
+          if (lastMsg?.text) agentReply = lastMsg.text;
+        }
+        return res.json({ reply: agentReply });
+      } else {
+        const errText = await resp.text();
+        console.warn(`⚠️ Chat failed with role=${role}:`, errText);
+      }
+    } catch (err) {
+      console.error(`❌ Chat error with role=${role}:`, err);
     }
-
-    const data = await resp.json();
-    console.log("✅ Ultravox chat response:", JSON.stringify(data, null, 2));
-
-    let agentReply = "No reply found.";
-    if (data.messages && Array.isArray(data.messages)) {
-      const lastMsg = data.messages[data.messages.length - 1];
-      if (lastMsg?.text) agentReply = lastMsg.text;
-    }
-
-    res.json({ reply: agentReply });
-  } catch (err) {
-    console.error("❌ Chat error:", err);
-    res.status(500).json({ reply: "⚠️ Error contacting Ultravox agent." });
   }
+
+  return res.status(500).json({ reply: "⚠️ All role attempts failed." });
 });
 
 // ================== START CALL ENDPOINT ==================
 app.post("/api/ultravox/start-call", async (req, res) => {
+  const basePayload = {
+    systemPrompt:
+      "You are Alaska Super Hospital Voice Assistant. Assist users with hospital queries over voice.",
+    model: "gpt-4o-mini",
+    voice: "alloy",
+    medium: "webRtc", // ✅ enforce plain string
+  };
+
   try {
-    const resp = await fetch("https://api.ultravox.ai/api/calls", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-API-Key": ULTRAVOX_API_KEY,
-      },
-      body: JSON.stringify({
-        systemPrompt:
-          "You are Alaska Super Hospital Voice Assistant. Assist users with hospital queries over voice.",
-        model: "gpt-4o-mini",
-        voice: "alloy",
-        medium: "webRtc", // ✅ correct way
-        initialMessages: [
-          { role: "USER", text: "Hello, I’d like to start a call." }
-        ],
-      }),
+    const resp = await callUltravox({
+      ...basePayload,
+      initialMessages: [{ role: "CLIENT", text: "Hello, I'd like to start a call." }],
     });
 
     if (!resp.ok) {
