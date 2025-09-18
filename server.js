@@ -17,7 +17,7 @@ app.get("/", (req, res) => {
   res.send("✅ Alaska Backend is running");
 });
 
-// ================== HELPER: call Ultravox ==================
+// ================== HELPER ==================
 async function callUltravox(payload) {
   const resp = await fetch("https://api.ultravox.ai/api/calls", {
     method: "POST",
@@ -42,8 +42,7 @@ app.post("/api/ultravox/chat", async (req, res) => {
     voice: "alloy",
   };
 
-  // Try role: CLIENT, fallback AGENT
-  const rolesToTry = ["CLIENT", "AGENT"];
+  const rolesToTry = ["MESSAGE_ROLE_USER", "MESSAGE_ROLE_AGENT"];
   for (const role of rolesToTry) {
     try {
       const resp = await callUltravox({
@@ -79,13 +78,13 @@ app.post("/api/ultravox/start-call", async (req, res) => {
       "You are Alaska Super Hospital Voice Assistant. Assist users with hospital queries over voice.",
     model: "gpt-4o-mini",
     voice: "alloy",
-    medium: "webRtc", // ✅ enforce plain string
+    webRtc: {}, // ✅ correct object field
   };
 
   try {
     const resp = await callUltravox({
       ...basePayload,
-      initialMessages: [{ role: "CLIENT", text: "Hello, I'd like to start a call." }],
+      initialMessages: [{ role: "MESSAGE_ROLE_USER", text: "Hello, I'd like to start a call." }],
     });
 
     if (!resp.ok) {
